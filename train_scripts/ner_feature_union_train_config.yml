@@ -1,0 +1,85 @@
+imports:
+  - /Users/hujia/Documents/moveworks/moveworks/configs/services/ml/common_config.yml
+  - /Users/hujia/Documents/moveworks/moveworks/moveworks/mlutils/model_configs/base_model_conf.yml
+
+operation:
+  type: Train
+
+# model:
+#   DecisionTreeMultiClassTransformer:
+#     max_depth: 100
+
+data:
+  data_loader_type: IOTagTokensToMoveDocViewDataLoader
+  path: /Users/hujia/Documents/moveworks/boosted_iob_data_20180926.data
+  # path: /Users/hujia/Documents/moveworks/small100.data
+  O_dropoff: 0.5
+  test_train_split: 0.8
+  label_map:
+    I-Date:
+      - I-Spacy/DATE
+    I-Hardware:
+      - I-Hardware
+      - I-CommonHardware
+    I-PersonName:
+      - I-PersonName
+      - I-SPACY/PERSON
+    I-Time:
+      - I-SPACY/TIME
+    I-CompanyName:
+      - I-CompanyName
+      - I-SPACY/ORG
+      - I-Alliances
+    I-Infra:
+      - I-Infra
+    I-BizApps:
+      - I-BizApps
+    I-Department:
+      - I-Department
+    I-TicketId:
+      - I-TicketId
+    I-Email:
+      - I-Email
+    I-BotNames:
+      - I-BotNames
+    I-IP:
+      - I-IP
+    I-Emoji:
+      - I-Emoji
+    I-Other:
+      - I-Other
+    I-PERCENT:
+      - I-SPACY/PERCENT
+    I-ORDINAL:
+      - I-SPACY/ORDINAL
+    I-CARDINAL:
+      - I-SPACY/CARDINAL
+    I-LOCATION:
+      - I-SPACY/GPE
+
+
+pipeline:
+    pipeline_components:
+        - union:
+            - pipeline:
+                - NERFeaturizer
+                - NERfeaturesToStringTransformer
+                - MoveDocViewListToDictTransformer
+                - DictVectorizerTransformer
+            - pipeline:
+                - MoveDocToTextTransformer
+                - type: StringToSentenceEmbeddingTransformer
+                  params:
+                    sentence_embedder_dir_base: /Users/hujia/Desktop/
+                    sentence_embedder_dir_name: embedder-lite
+                    relative_sentence_piece_path: assets/universal_encoder_8k_spm.model
+          concatenate_outputs: True
+        - DecisionTreeMultiClassTransformer
+        # - LightGBMMultiClassTransformer
+    # model_types: [LightGBM]
+    # model_types: [LightGBMMultiClassTransformer]
+    model_types: [DecisionTreeMultiClassTransformer]
+    check_points: []
+    steps_to_skip_saving:
+        - ChatRequestToTextTransformer
+        - StringToMoveDocTransformer
